@@ -6,9 +6,16 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("POSTGRES_PRISMA_URL")
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
   directUrl = env("POSTGRES_PRISMA_URL")
+}
+
+// Define the Role enum
+enum Role {
+  ADMIN
+  SELLER
+  CUSTOMER
 }
 
 model User {
@@ -18,6 +25,7 @@ model User {
   password      String?
   emailVerified DateTime? @map("email_verified")
   image         String?
+  role          Role      @default(CUSTOMER) // Add role field with CUSTOMER as default
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
