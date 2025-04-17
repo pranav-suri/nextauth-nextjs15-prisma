@@ -33,6 +33,23 @@ model User {
 
   @@map("users")
 }
+// Enum definition translated from pgEnum
+enum Status {
+  active
+  inactive
+  archived
+}
+model Product {
+  id          Int      @id @default(autoincrement())
+  imageUrl    String   @map("image_url") // Maps to the exact column name in the DB
+  name        String
+  status      Status // Uses the Prisma enum
+  price       Float
+  stock       Int
+  availableAt DateTime @map("available_at") // Maps to the exact column name
+
+  @@map("products") // Maps to the 'products' table name
+}
 
 model Account {
   id                String   @id @default(cuid())
