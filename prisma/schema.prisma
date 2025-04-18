@@ -18,37 +18,81 @@ enum Role {
   CUSTOMER
 }
 
+// Define action types for audit logs
+enum ActionType {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  OTHER
+}
+
 model User {
-  id            String    @id @default(uuid())
+  id            String     @id @default(uuid())
   name          String
-  email         String   @unique
+  email         String     @unique
   password      String?
-  emailVerified DateTime? @map("email_verified")
+  emailVerified DateTime?  @map("email_verified")
   image         String?
-  role          Role      @default(CUSTOMER) // Add role field with CUSTOMER as default
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  role          Role       @default(CUSTOMER) // Add role field with CUSTOMER as default
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
   accounts      Account[]
   sessions      Session[]
+  auditLogs     AuditLog[] @relation("UserAuditLogs")
+  actionLogs    AuditLog[] @relation("ActionByUser")
 
   @@map("users")
 }
+
 // Enum definition translated from pgEnum
 enum Status {
   active
   inactive
   archived
 }
+
 model Product {
-  id          Int      @id @default(autoincrement())
-  imageUrl    String   @map("image_url") // Maps to the exact column name in the DB
+  id          Int        @id @default(autoincrement())
+  imageUrl    String     @map("image_url") // Maps to the exact column name in the DB
   name        String
   status      Status // Uses the Prisma enum
   price       Float
   stock       Int
-  availableAt DateTime @map("available_at") // Maps to the exact column name
+  availableAt DateTime   @map("available_at") // Maps to the exact column name
+  auditLogs   AuditLog[]
 
   @@map("products") // Maps to the 'products' table name
+}
+
+model AuditLog {
+  id          String     @id @default(uuid())
+  timestamp   DateTime   @default(now())
+  actionType  ActionType
+  entityType  String // The type of entity affected (User, Product, etc.)
+  entityId    String // The ID of the affected entity
+  description String // Human-readable description of the action
+  data        String?    @db.Text // JSON data of changes/details
+
+  // User who performed the action
+  userId String?
+  user   User?   @relation("ActionByUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  // For actions on User entities
+  userEntityId String?
+  userEntity   User?   @relation("UserAuditLogs", fields: [userEntityId], references: [id], onDelete: SetNull)
+
+  // For actions on Product entities
+  productId Int?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([timestamp])
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@map("audit_logs")
 }
 
 model Account {

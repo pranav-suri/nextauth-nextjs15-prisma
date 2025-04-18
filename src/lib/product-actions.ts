@@ -3,7 +3,8 @@
 import { auth } from "../../auth";
 import prisma from "../../prisma/prisma";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { createAuditLog } from "./audit-logs";
+import { ActionType } from "@prisma/client";
 
 // Define the Product type
 type Product = {
@@ -107,6 +108,24 @@ export async function createProduct(formData: ProductFormData) {
             },
         });
 
+        // Record the action in audit logs
+        await createAuditLog({
+            actionType: ActionType.CREATE,
+            entityType: "Product",
+            entityId: product.id.toString(),
+            description: `Product '${product.name}' was created with price ${product.price} and status ${product.status}`,
+            userId: session.user.id,
+            productId: product.id,
+            data: {
+                name: product.name,
+                price: product.price,
+                stock: product.stock,
+                status: product.status,
+                imageUrl: product.imageUrl,
+                availableAt: product.availableAt,
+            },
+        });
+
         // Revalidate the products page to show the new product
         revalidatePath("/seller/products");
 
@@ -139,18 +158,51 @@ export async function updateProduct(id: number, formData: ProductFormData) {
     }
 
     try {
+        // Get existing product data for audit logging
+        const existingProduct = await prisma.product.findUnique({
+            where: { id },
+        });
+
+        if (!existingProduct) {
+            throw new Error("Product not found");
+        }
+
+        // Prepare update data
+        const updateData = {
+            name: formData.name,
+            imageUrl: formData.imageUrl || "",
+            price: Number(formData.price),
+            stock: Number(formData.stock),
+            status: formData.status || "inactive",
+            availableAt: formData.availableAt
+                ? new Date(formData.availableAt)
+                : new Date(),
+        };
+
         // Update the product
         const product = await prisma.product.update({
             where: { id },
+            data: updateData,
+        });
+
+        // Record the action in audit logs
+        await createAuditLog({
+            actionType: ActionType.UPDATE,
+            entityType: "Product",
+            entityId: product.id.toString(),
+            description: `Product '${product.name}' was updated`,
+            userId: session.user.id,
+            productId: product.id,
             data: {
-                name: formData.name,
-                imageUrl: formData.imageUrl || "",
-                price: Number(formData.price),
-                stock: Number(formData.stock),
-                status: formData.status || "inactive",
-                availableAt: formData.availableAt
-                    ? new Date(formData.availableAt)
-                    : new Date(),
+                previousData: {
+                    name: existingProduct.name,
+                    price: existingProduct.price,
+                    stock: existingProduct.stock,
+                    status: existingProduct.status,
+                    imageUrl: existingProduct.imageUrl,
+                    availableAt: existingProduct.availableAt,
+                },
+                newData: updateData,
             },
         });
 
@@ -177,6 +229,34 @@ export async function deleteProduct(id: number) {
     }
 
     try {
+        // Get product data for audit log before deleting
+        const product = await prisma.product.findUnique({
+            where: { id },
+        });
+
+        if (!product) {
+            throw new Error("Product not found");
+        }
+
+        // Record the delete action in audit logs before actually deleting
+        await createAuditLog({
+            actionType: ActionType.DELETE,
+            entityType: "Product",
+            entityId: id.toString(),
+            description: `Product '${product.name}' with price ${product.price} was deleted`,
+            userId: session.user.id,
+            data: {
+                deletedProduct: {
+                    name: product.name,
+                    price: product.price,
+                    stock: product.stock,
+                    status: product.status,
+                    imageUrl: product.imageUrl,
+                    availableAt: product.availableAt,
+                },
+            },
+        });
+
         // Delete the product
         await prisma.product.delete({
             where: { id },

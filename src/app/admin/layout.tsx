@@ -32,6 +32,12 @@ export default async function AdminLayout({
                         >
                             Manage Users
                         </a>
+                        <a
+                            href="/admin/audit-logs"
+                            className="block py-2 px-4 hover:bg-slate-700 rounded"
+                        >
+                            Audit Logs
+                        </a>
                     </nav>
                 </aside>
                 <main className="flex-1 p-6">{children}</main>

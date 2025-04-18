@@ -4,6 +4,8 @@ import prisma from "./prisma/prisma";
 import Github from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { ActionType } from "@prisma/client";
+import { createAuditLog } from "./src/lib/audit-logs";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     session: { strategy: "jwt" },
@@ -41,6 +43,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 ) {
                     return null;
                 }
+
+                // Log successful login
+                await createAuditLog({
+                    actionType: ActionType.LOGIN,
+                    entityType: "User",
+                    entityId: user.id,
+                    description: `User '${user.name}' (${user.email}) logged in`,
+                    userId: user.id,
+                    userEntityId: user.id,
+                }).catch((err) =>
+                    console.error("Failed to log login event:", err)
+                );
 
                 return {
                     id: user.id,

@@ -4,6 +4,8 @@ import prisma from "../../prisma/prisma";
 import { auth } from "../../auth";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
+import { createAuditLog } from "./audit-logs";
+import { ActionType } from "@prisma/client";
 
 // Type for User creation/update
 type UserData = {
@@ -121,6 +123,20 @@ export async function createUser(userData: UserData) {
             },
         });
 
+        // Record the action in audit logs
+        await createAuditLog({
+            actionType: ActionType.CREATE,
+            entityType: "User",
+            entityId: newUser.id,
+            description: `User '${newUser.name}' (${newUser.email}) was created with role ${newUser.role}`,
+            userEntityId: newUser.id,
+            data: {
+                name: newUser.name,
+                email: newUser.email,
+                role: newUser.role,
+            },
+        });
+
         revalidatePath("/admin/users");
         return newUser;
     } catch (error) {
@@ -171,6 +187,25 @@ export async function updateUser(id: string, userData: UserData) {
             },
         });
 
+        // Record the action in audit logs
+        const session = await auth();
+        await createAuditLog({
+            actionType: ActionType.UPDATE,
+            entityType: "User",
+            entityId: updatedUser.id,
+            description: `User '${updatedUser.name}' was updated`,
+            userEntityId: updatedUser.id,
+            data: {
+                previousData: {
+                    name: existingUser.name,
+                    email: existingUser.email,
+                    role: existingUser.role,
+                },
+                newData: updateData,
+                passwordChanged: !!password,
+            },
+        });
+
         revalidatePath("/admin/users");
         return updatedUser;
     } catch (error) {
@@ -203,6 +238,22 @@ export async function deleteUser(id: string) {
         if (id === session.user.id) {
             throw new Error("Cannot delete your own account");
         }
+
+        // Record the delete action in audit logs before actually deleting
+        await createAuditLog({
+            actionType: ActionType.DELETE,
+            entityType: "User",
+            entityId: id,
+            description: `User '${existingUser.name}' (${existingUser.email}) with role ${existingUser.role} was deleted`,
+            userId: session.user.id,
+            data: {
+                deletedUser: {
+                    name: existingUser.name,
+                    email: existingUser.email,
+                    role: existingUser.role,
+                },
+            },
+        });
 
         // Delete the user
         await prisma.user.delete({
