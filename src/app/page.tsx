@@ -57,6 +57,11 @@ export default async function ProfilePage() {
                                 Email
                             </p>
                             <p className="font-medium">{user?.email}</p>
+                            <p className="text-sm text-muted-foreground">
+                                Role
+                            </p>
+                            {/* @ts-expect-error */}
+                            <p className="font-medium">{user?.role}</p>
                         </div>
                     </CardContent>
                     <CardFooter className="flex justify-center pb-6 pt-2">

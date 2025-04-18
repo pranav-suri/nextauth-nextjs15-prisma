@@ -1,8 +1,8 @@
 import prisma from "../../prisma/prisma";
-import { ActionType } from "@prisma/client";
+import { ActionType } from "./constants";
 import { auth } from "../../auth";
 
-export type AuditLogParams = {
+type AuditLogParams = {
     actionType: ActionType;
     entityType: string;
     entityId: string;

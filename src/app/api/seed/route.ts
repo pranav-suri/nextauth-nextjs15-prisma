@@ -113,7 +113,6 @@ export async function GET() {
         // Use prisma.product.createMany to insert the data
         const result = await prisma.product.createMany({
             data: productsToCreate,
-            skipDuplicates: true, // Optional: If you didn't delete first, this skips errors on unique constraint violations (like if name was unique)
         });
 
         console.log(`Successfully created ${result.count} products.`);

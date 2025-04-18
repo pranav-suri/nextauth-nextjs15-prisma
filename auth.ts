@@ -4,8 +4,9 @@ import prisma from "./prisma/prisma";
 import Github from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { ActionType } from "@prisma/client";
+
 import { createAuditLog } from "./src/lib/audit-logs";
+import { ActionType } from "@/lib/constants";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     session: { strategy: "jwt" },

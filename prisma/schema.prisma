@@ -6,27 +6,20 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("POSTGRES_PRISMA_URL")
-  directUrl = env("POSTGRES_PRISMA_URL")
+  provider  = "sqlserver" // Use "sqlserver" for Microsoft SQL Server
+  url       = env("AZURE_DB_URL") // IMPORTANT: Ensure this points to your SQL Server instance!
+  directUrl = env("AZURE_DB_URL") // IMPORTANT: Ensure this points to your SQL Server instance!
 }
 
-// Define the Role enum
-enum Role {
-  ADMIN
-  SELLER
-  CUSTOMER
-}
+// --- Enums removed, will be handled as Strings in the DB ---
+// Define Role values (used as strings)
+// "ADMIN", "SELLER", "CUSTOMER"
 
-// Define action types for audit logs
-enum ActionType {
-  CREATE
-  UPDATE
-  DELETE
-  LOGIN
-  LOGOUT
-  OTHER
-}
+// Define ActionType values (used as strings)
+// "CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT", "OTHER"
+
+// Define Status values (used as strings)
+// "active", "inactive", "archived"
 
 model User {
   id            String     @id @default(uuid())
@@ -35,7 +28,7 @@ model User {
   password      String?
   emailVerified DateTime?  @map("email_verified")
   image         String?
-  role          Role       @default(CUSTOMER) // Add role field with CUSTOMER as default
+  role          String     @default("ADMIN") // Role
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   accounts      Account[]
@@ -46,46 +39,39 @@ model User {
   @@map("users")
 }
 
-// Enum definition translated from pgEnum
-enum Status {
-  active
-  inactive
-  archived
-}
-
 model Product {
   id          Int        @id @default(autoincrement())
-  imageUrl    String     @map("image_url") // Maps to the exact column name in the DB
+  imageUrl    String     @map("image_url")
   name        String
-  status      Status // Uses the Prisma enum
+  status      String // Status
   price       Float
   stock       Int
-  availableAt DateTime   @map("available_at") // Maps to the exact column name
+  availableAt DateTime   @map("available_at")
   auditLogs   AuditLog[]
 
-  @@map("products") // Maps to the 'products' table name
+  @@map("products")
 }
 
 model AuditLog {
-  id          String     @id @default(uuid())
-  timestamp   DateTime   @default(now())
-  actionType  ActionType
-  entityType  String // The type of entity affected (User, Product, etc.)
-  entityId    String // The ID of the affected entity
-  description String // Human-readable description of the action
-  data        String?    @db.Text // JSON data of changes/details
+  id          String   @id @default(uuid())
+  timestamp   DateTime @default(now())
+  actionType  String // ActionType
+  entityType  String
+  entityId    String
+  description String
+  data        String?  @db.Text
 
   // User who performed the action
   userId String?
-  user   User?   @relation("ActionByUser", fields: [userId], references: [id], onDelete: SetNull)
+  user   User?   @relation("ActionByUser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction) // Changed onDelete to NoAction
 
   // For actions on User entities
   userEntityId String?
-  userEntity   User?   @relation("UserAuditLogs", fields: [userEntityId], references: [id], onDelete: SetNull)
+  userEntity   User?   @relation("UserAuditLogs", fields: [userEntityId], references: [id], onDelete: NoAction, onUpdate: NoAction) // Changed onDelete to NoAction
 
   // For actions on Product entities
   productId Int?
-  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull, onUpdate: NoAction) // Keep SetNull or change to NoAction if desired
 
   createdAt DateTime @default(now())
 
@@ -109,7 +95,7 @@ model Account {
   id_token          String?  @db.Text
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction) // Added onUpdate constraint
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -118,10 +104,10 @@ model Account {
 model Session {
   id           String   @id @default(cuid())
   userId       String?  @map("user_id")
-  sessionToken String   @unique @map("session_token") @db.Text
+  sessionToken String   @map("session_token") @db.Text
   accessToken  String?  @map("access_token") @db.Text
   expires      DateTime
-  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction) // Added onUpdate constraint
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -136,5 +122,5 @@ model VerificationRequest {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  @@unique([identifier, token])
+  @@unique([identifier, token], map: "UQ_VerificationRequest_identifier_token")
 }

@@ -1,4 +1,3 @@
-import { ActionType } from "@prisma/client";
 import { getAuditLogs } from "@/lib/audit-logs";
 import {
     Card,

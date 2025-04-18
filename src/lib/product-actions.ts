@@ -4,7 +4,7 @@ import { auth } from "../../auth";
 import prisma from "../../prisma/prisma";
 import { revalidatePath } from "next/cache";
 import { createAuditLog } from "./audit-logs";
-import { ActionType } from "@prisma/client";
+import { ActionType } from "./constants";
 
 // Define the Product type
 type Product = {
@@ -13,7 +13,7 @@ type Product = {
     imageUrl: string;
     price: number;
     stock: number;
-    status: "active" | "inactive" | "archived";
+    status: string;
     availableAt: Date;
 };
 

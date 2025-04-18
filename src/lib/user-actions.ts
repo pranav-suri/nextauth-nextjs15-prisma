@@ -1,11 +1,10 @@
 "use server";
-
 import prisma from "../../prisma/prisma";
 import { auth } from "../../auth";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { createAuditLog } from "./audit-logs";
-import { ActionType } from "@prisma/client";
+import { ActionType } from "./constants";
 
 // Type for User creation/update
 type UserData = {
