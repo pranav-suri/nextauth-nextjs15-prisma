@@ -53,9 +53,9 @@ export default async function SellerDashboard() {
                                 <span className="font-semibold">Email:</span>{" "}
                                 {session?.user?.email}
                             </p>
-                            {/* @ts-expect-error - role is available but not in the type */}
                             <p>
                                 <span className="font-semibold">Role:</span>{" "}
+                                {/* @ts-expect-error - role is available but not in the type */}
                                 {session?.user?.role}
                             </p>
                         </div>

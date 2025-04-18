@@ -10,6 +10,7 @@ import { createAuditLog } from "./src/lib/audit-logs";
 export const { handlers, auth, signIn, signOut } = NextAuth({
     session: { strategy: "jwt" },
     adapter: PrismaAdapter(prisma),
+    trustHost: true,
     providers: [
         Github,
         CredentialsProvider({
