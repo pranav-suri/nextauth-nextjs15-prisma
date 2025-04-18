@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default async function ProfilePage() {
     const session = await auth();
@@ -20,6 +21,18 @@ export default async function ProfilePage() {
     }
 
     const user = session?.user;
+
+    const RelevantLink = () => {
+        const AdminLink = <Link href="/admin">Admin Dashboard</Link>;
+        const SellerLink = <Link href="/seller">Seller Dashboard</Link>;
+        const CustomerLink = <Link href="/customer">Customer View</Link>;
+
+        // @ts-expect-error
+        if (session.user.role === "ADMIN") return AdminLink;
+        // @ts-expect-error
+        else if (session.user.role === "SELLER") return SellerLink;
+        else return CustomerLink;
+    };
 
     return (
         <section className="min-h-screen pt-20 bg-gradient-to-b from-background to-muted">
@@ -64,8 +77,11 @@ export default async function ProfilePage() {
                             <p className="font-medium">{user?.role}</p>
                         </div>
                     </CardContent>
-                    <CardFooter className="flex justify-center pb-6 pt-2">
-                        <Button variant="outline">Edit Profile</Button>
+                    <CardFooter className="flex justify-center gap-4 pb-6 pt-2">
+                        <Button variant="outline">{RelevantLink()}</Button>
+                        <Button variant="outline" asChild>
+                            <Link href="/api/auth/signout">Sign Out</Link>
+                        </Button>
                     </CardFooter>
                 </Card>
             </div>

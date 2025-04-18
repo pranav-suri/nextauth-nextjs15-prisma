@@ -33,6 +33,14 @@ export default async function SellerLayout({
                         >
                             Manage Products
                         </Link>
+                        <div className="pt-4 mt-4 border-t border-slate-700">
+                            <Link
+                                href="/api/auth/signout"
+                                className="block py-2 px-4 hover:bg-slate-700 rounded text-red-400"
+                            >
+                                Sign Out
+                            </Link>
+                        </div>
                     </nav>
                 </aside>
                 <main className="flex-1 p-6">{children}</main>

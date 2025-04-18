@@ -2,16 +2,16 @@ import { redirect } from "next/navigation";
 import { auth } from "../../../auth";
 import Link from "next/link";
 
-export default async function AdminLayout({
+export default async function CustomerLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
     const session = await auth();
 
-    // Check if the user is authenticated and has the ADMIN role
+    // Check if the user is authenticated and has the CUSTOMER role
     // @ts-expect-error
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!session?.user || session.user.role !== "CUSTOMER") {
         return redirect("/");
     }
 
@@ -19,26 +19,22 @@ export default async function AdminLayout({
         <div className="flex min-h-screen flex-col">
             <div className="flex flex-1">
                 <aside className="w-64 bg-slate-800 text-white p-4">
-                    <h2 className="text-xl font-bold mb-6">Admin Dashboard</h2>
+                    <h2 className="text-xl font-bold mb-6">
+                        Customer Dashboard
+                    </h2>
                     <nav className="space-y-2">
-                        <a
-                            href="/admin"
+                        <Link
+                            href="/customer"
                             className="block py-2 px-4 hover:bg-slate-700 rounded"
                         >
                             Dashboard
-                        </a>
-                        <a
-                            href="/admin/users"
+                        </Link>
+                        <Link
+                            href="/customer/products"
                             className="block py-2 px-4 hover:bg-slate-700 rounded"
                         >
-                            Manage Users
-                        </a>
-                        <a
-                            href="/admin/audit-logs"
-                            className="block py-2 px-4 hover:bg-slate-700 rounded"
-                        >
-                            Audit Logs
-                        </a>
+                            Browse Products
+                        </Link>
                         <div className="pt-4 mt-4 border-t border-slate-700">
                             <Link
                                 href="/api/auth/signout"

@@ -21,6 +21,35 @@ type Product = {
 export type ProductFormData = Omit<Product, "id">;
 
 /**
+ * Get active products for customers
+ */
+export async function getActiveProducts() {
+    const session = await auth();
+
+    // Check if user is authenticated and is a CUSTOMER
+    // @ts-expect-error - role is available but not in the type
+    if (!session?.user || session.user.role !== "CUSTOMER") {
+        throw new Error("Unauthorized: Only customers can access this page");
+    }
+
+    try {
+        const products = await prisma.product.findMany({
+            where: {
+                status: "active",
+                stock: { gt: 0 },
+                availableAt: { lte: new Date() },
+            },
+            orderBy: { name: "asc" },
+        });
+
+        return products;
+    } catch (error) {
+        console.error("Failed to fetch active products:", error);
+        throw new Error("Failed to fetch products");
+    }
+}
+
+/**
  * Get all products for the authenticated seller
  */
 export async function getProducts() {
